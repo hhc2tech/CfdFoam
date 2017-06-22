@@ -27,8 +27,9 @@ __title__ = "Classes for New CFD solver"
 __author__ = "Qingfeng Xia"
 __url__ = "http://www.freecadweb.org"
 
+import os
 import os.path
-import Gnuplot
+
 from numpy import *
 
 import FreeCAD
@@ -37,15 +38,18 @@ import CfdCaseWriterFoam
 import CfdTools
 import platform
 import subprocess
+from PySide.QtCore import QObject, Signal, QThread
+from CfdResidualPlot import PlottingWorker
 
 
-class CfdRunnable(object):
+class CfdRunnable(QObject, object):
     ##  run the solver and read the result, corresponding to FemTools class
     #  @param analysis - analysis object to be used as the core object.
     #  "__init__" tries to use current active analysis in analysis is left empty.
     #  Rises exception if analysis is not set and there is no active analysis
     #  The constructur of FemTools is for use of analysis without solver object
     def __init__(self, analysis=None, solver=None):
+        super(CfdRunnable, self).__init__()
         if analysis and analysis.isDerivedFrom("Fem::FemAnalysisPython"):
             ## @var analysis
             #  FEM analysis - the core object. Has to be present.
@@ -75,6 +79,8 @@ class CfdRunnable(object):
 
         self.edit_process = None
 
+
+
     def check_prerequisites(self):
         return "" #CfdTools.check_prerequisites()
 
@@ -91,35 +97,28 @@ class CfdRunnable(object):
 
 
 class CfdRunnableFoam(CfdRunnable):
+    update_residual_signal = Signal(list, list, list, list)
+
     def __init__(self, analysis=None, solver=None):
         super(CfdRunnableFoam, self).__init__(analysis, solver)
-        self.writer = CfdCaseWriterFoam.CfdCaseWriterFoam(self.analysis)
 
-        # Set default windows executable to gnuplot instead of older pgnuplot
-        import platform
-        if platform.system() == 'Windows':
-            Gnuplot.GnuplotOpts.gnuplot_command = 'gnuplot.exe'
-        gnuplot_cmd = Gnuplot.GnuplotOpts.gnuplot_command
-        # For blueCFD, use the supplied Gnuplot
-        if CfdTools.getFoamRuntime() == 'BlueCFD':
-            gnuplot_cmd = CfdTools.getFoamDir()
-            gnuplot_cmd = '{}\\..\\AddOns\\gnuplot\\bin\\gnuplot.exe'.format(gnuplot_cmd)
-            Gnuplot.GnuplotOpts.gnuplot_command = '"{}"'.format(gnuplot_cmd)
-        # Otherwise, the command 'gnuplot' must be in the path. Possibly make path user-settable.
-        # Test to see if it exists, as the exception thrown is cryptic on Windows if it doesn't
-        import distutils.spawn
-        if distutils.spawn.find_executable(gnuplot_cmd) is None:
-            raise IOError("Gnuplot executable " + gnuplot_cmd + " not found in path.")
-        self.g = Gnuplot.Gnuplot()
+        self.writer = CfdCaseWriterFoam.CfdCaseWriterFoam(self.analysis)
 
         self.UxResiduals = [1]
         self.UyResiduals = [1]
         self.UzResiduals = [1]
-        self.pResiduals = [1]
+        self.pResiduals = [0]
         self.niter = 0
 
         self.print_next_error_lines = 0
         self.print_next_error_file = False
+
+        self.plotting_worker = PlottingWorker()
+        self.plotting_thread = QThread()
+        self.plotting_worker.moveToThread(self.plotting_thread)
+        self.update_residual_signal.connect(self.plotting_worker.updateResiduals)
+        # Auto cleanup of objects in plotting_worker
+        self.plotting_thread.finished.connect(self.plotting_worker.deleteLater)
 
     def check_prerequisites(self):
         return ""
@@ -133,15 +132,7 @@ class CfdRunnableFoam(CfdRunnable):
         self.print_next_error_lines = 0
         self.print_next_error_file = False
 
-        self.g('set style data lines')
-        self.g.title("Simulation residuals")
-        self.g.xlabel("Iteration")
-        self.g.ylabel("Residual")
-
-        self.g("set grid")
-        self.g("set logscale y")
-        self.g("set yrange [0.95:1.05]")
-        self.g("set xrange [0:1]")
+        self.plotting_thread.start()
 
         # Environment is sourced in run script, so no need to include in run command
         cmd = CfdTools.makeRunCommand('./Allrun', case_dir, source_env=False)
@@ -176,23 +167,7 @@ class CfdRunnableFoam(CfdRunnable):
             if "p," in split and self.niter > len(self.pResiduals):
                 self.pResiduals.append(float(split[7].split(',')[0]))
 
-        # Workaround for 'Interrupted System Call' error - see PEP 475 (not necessary in Python >= 3.5)
-        while True:
-            try:
-                self.g.plot(Gnuplot.Data(self.UxResiduals, with_='line', title="Ux", inline=1),
-                            Gnuplot.Data(self.UyResiduals, with_='line', title="Uy", inline=1),
-                            Gnuplot.Data(self.UzResiduals, with_='line', title="Uz", inline=1),
-                            Gnuplot.Data(self.pResiduals, with_='line', title="p", inline=1))
-                break
-            except IOError as ioe:
-                import errno
-                if ioe.errno == errno.EINTR:
-                    pass
-                else:
-                    raise
-
-        if self.niter >= 2:
-            self.g("set autoscale")  # NOTE: this is just to suppress the empty yrange error when Gnuplot autoscales
+        self.update_residual_signal.emit(self.UxResiduals, self.UyResiduals, self.UzResiduals, self.pResiduals)
 
     def processErrorOutput(self, err):
         """
@@ -224,3 +199,7 @@ class CfdRunnableFoam(CfdRunnable):
             return ret
         else:
             return None
+
+    def cleanUp(self):
+        self.plotting_thread.quit()
+        self.plotting_thread.wait()
