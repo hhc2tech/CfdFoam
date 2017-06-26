@@ -644,7 +644,6 @@ class TaskPanelCfdFluidBoundary:
 
     def faceHighlightChange(self):
         FreeCADGui.Selection.clearSelection()
-
         for i in range(len(self.form.faceListWidget.selectedItems())):
             ind = self.form.faceListWidget.indexFromItem(self.form.faceListWidget.selectedItems()[i])
             ind = ind.row()

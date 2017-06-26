@@ -120,6 +120,15 @@ class _TaskPanelCfdMeshRegion:
             self.form.baffleCheckBox.setToolTip("Must be set to define an internal face with 0 thickness (for linking" \
                 "to baffle boundary condition.)")
 
+        self.form.faceList.clicked.connect(self.faceListSelection)
+        self.form.closeListOfFaces.clicked.connect(self.closeFaceList)
+        self.form.shapeComboBox.currentIndexChanged.connect(self.faceListShapeChosen)
+        self.form.faceListWidget.itemSelectionChanged.connect(self.faceHighlightChange)
+        self.form.addFaceListFace.clicked.connect(self.addFaceListFace)
+        self.form.shapeComboBox.setToolTip("Choose a solid object from the drop down list and select one or more of the faces associated with the chosen solid.")
+
+
+
         self.update()
         self.initialiseUponReload()
 
@@ -351,3 +360,64 @@ class _TaskPanelCfdMeshRegion:
             items.append(item_name)
         for listItemName in sorted(items):
             self.form.list_References.addItem(listItemName)
+
+
+
+    def faceListSelection(self):
+        self.form.stackedWidget.setCurrentIndex(1)
+        analysis_obj = FemGui.getActiveAnalysis()
+        self.solidsNames = ['None']
+        self.solidsLabels = ['None']
+        for i in FreeCADGui.ActiveDocument.Document.Objects:
+            if "Shape" in i.PropertiesList:
+                if len(i.Shape.Solids)>0:
+                    self.solidsNames.append(i.Name)
+                    self.solidsLabels.append(i.Label)
+                    #FreeCADGui.hideObject(i)
+        self.form.shapeComboBox.clear()
+        #self.form.shapeComboBox.insertItems(1,self.solidsNames)
+        self.form.shapeComboBox.insertItems(1,self.solidsLabels)
+
+    def closeFaceList(self):
+        self.form.stackedWidget.setCurrentIndex(0)
+        #self.obj.ViewObject.show()
+
+    def faceListShapeChosen(self):
+        ind = self.form.shapeComboBox.currentIndex()
+        objectName = self.solidsNames[ind]
+        self.shapeObj = FreeCADGui.ActiveDocument.Document.getObject(objectName)
+        self.hideObjects()
+        self.form.faceListWidget.clear()
+        if objectName != 'None':
+            FreeCADGui.showObject(self.shapeObj)
+            self.listOfShapeFaces = self.shapeObj.Shape.Faces
+            for i in range(len(self.listOfShapeFaces)):
+                self.form.faceListWidget.insertItem(i,"Face"+str(i))
+
+    def hideObjects(self):
+        for i in FreeCADGui.ActiveDocument.Document.Objects:
+            if "Shape" in i.PropertiesList:
+                FreeCADGui.hideObject(i)
+        self.obj.ViewObject.show()
+
+    def faceHighlightChange(self):
+        FreeCADGui.Selection.clearSelection()
+        for i in range(len(self.form.faceListWidget.selectedItems())):
+            ind = self.form.faceListWidget.indexFromItem(self.form.faceListWidget.selectedItems()[i])
+            ind = ind.row()
+            FreeCADGui.Selection.addSelection(self.shapeObj,'Face'+str(ind+1))
+
+    def addFaceListFace(self):
+        if self.form.faceListWidget.count()>0 and len(self.form.faceListWidget.selectedItems())>0:
+            for i in range(len(self.form.faceListWidget.selectedItems())):
+                ind = self.form.shapeComboBox.currentIndex()
+                objectName = self.solidsNames[ind]
+                ind = self.form.faceListWidget.indexFromItem(self.form.faceListWidget.selectedItems()[i])
+                ind = ind.row()
+                doc_name = self.obj.Document.Name
+                obj_name = objectName
+                sub = 'Face'+str(ind+1)
+                selected_object = FreeCAD.getDocument(doc_name).getObject(obj_name)
+                elt = selected_object.Shape.getElement(sub)
+                selection = (selected_object, sub)
+                self.selectionParser(selection)
