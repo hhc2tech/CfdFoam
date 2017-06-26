@@ -127,6 +127,7 @@ class _TaskPanelCfdMeshRegion:
         self.form.addFaceListFace.clicked.connect(self.addFaceListFace)
         self.form.shapeComboBox.setToolTip("Choose a solid object from the drop down list and select one or more of the faces associated with the chosen solid.")
 
+        self.form.list_References.itemSelectionChanged.connect(self.setSelection)
 
 
         self.update()
@@ -421,3 +422,15 @@ class _TaskPanelCfdMeshRegion:
                 elt = selected_object.Shape.getElement(sub)
                 selection = (selected_object, sub)
                 self.selectionParser(selection)
+
+
+    def setSelection(self):
+        FreeCADGui.Selection.clearSelection()
+        docName = str(self.obj.Document.Name)
+        doc = FreeCAD.getDocument(docName)
+        for i in range(len(self.form.list_References.selectedItems())):
+            ind = self.form.list_References.indexFromItem(self.form.list_References.selectedItems()[i])
+            ind = ind.row()
+            ref = self.references[ind]
+            selection_object = ref[0]
+            FreeCADGui.Selection.addSelection(selection_object, [str(ref[1])])
