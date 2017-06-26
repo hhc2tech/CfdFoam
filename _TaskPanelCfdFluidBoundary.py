@@ -643,20 +643,23 @@ class TaskPanelCfdFluidBoundary:
         self.obj.ViewObject.show()
 
     def faceHighlightChange(self):
-        ind = self.form.faceListWidget.currentRow()
         FreeCADGui.Selection.clearSelection()
-        FreeCADGui.Selection.addSelection(self.shapeObj,'Face'+str(ind+1))
+
+        for i in range(len(self.form.faceListWidget.selectedItems())):
+            ind = self.form.faceListWidget.indexFromItem(self.form.faceListWidget.selectedItems()[i])
+            ind = ind.row()
+            FreeCADGui.Selection.addSelection(self.shapeObj,'Face'+str(ind+1))
 
     def addFaceListFace(self):
-        #print self.form.faceListWidget.currentItem()," : ",self.form.faceListWidget.currentRow()
-        if self.form.faceListWidget.count()>0 and self.form.faceListWidget.currentRow()!=-1:
-            print True
-            ind = self.form.shapeComboBox.currentIndex()
-            objectName = self.solidsNames[ind]
-            ind = self.form.faceListWidget.currentRow()
-            self.selecting_references = True
-            self.addSelection(self.obj.Document.Name, objectName, 'Face'+str(ind+1))
-            self.selecting_references = False
+        if self.form.faceListWidget.count()>0 and len(self.form.faceListWidget.selectedItems())>0:
+            for i in range(len(self.form.faceListWidget.selectedItems())):
+                ind = self.form.shapeComboBox.currentIndex()
+                objectName = self.solidsNames[ind]
+                ind = self.form.faceListWidget.indexFromItem(self.form.faceListWidget.selectedItems()[i])
+                ind = ind.row()
+                self.selecting_references = True
+                self.addSelection(self.obj.Document.Name, objectName, 'Face'+str(ind+1))
+                self.selecting_references = False
 
         #self.obj.ViewObject.show()
         #self.addSelection(sel.DocumentName, sel.ObjectName, sub)

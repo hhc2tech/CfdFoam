@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>399</width>
-    <height>806</height>
+    <height>830</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -377,7 +377,6 @@
        </layout>
       </item>
      </layout>
-     <zorder>label_5</zorder>
      <zorder>label_5</zorder>
      <zorder>label_7</zorder>
      <zorder>frame</zorder>

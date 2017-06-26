@@ -14,16 +14,7 @@
    <string>CFD boundary condition</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
-   <property name="leftMargin">
-    <number>0</number>
-   </property>
-   <property name="topMargin">
-    <number>0</number>
-   </property>
-   <property name="rightMargin">
-    <number>0</number>
-   </property>
-   <property name="bottomMargin">
+   <property name="margin">
     <number>0</number>
    </property>
    <item>
@@ -35,16 +26,7 @@
       <layout class="QGridLayout" name="gridLayout_3">
        <item row="1" column="0">
         <layout class="QGridLayout" name="gridLayout_2">
-         <property name="leftMargin">
-          <number>8</number>
-         </property>
-         <property name="topMargin">
-          <number>8</number>
-         </property>
-         <property name="rightMargin">
-          <number>8</number>
-         </property>
-         <property name="bottomMargin">
+         <property name="margin">
           <number>8</number>
          </property>
          <item row="0" column="0">
@@ -76,16 +58,7 @@
          <property name="fieldGrowthPolicy">
           <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
          </property>
-         <property name="leftMargin">
-          <number>8</number>
-         </property>
-         <property name="topMargin">
-          <number>8</number>
-         </property>
-         <property name="rightMargin">
-          <number>8</number>
-         </property>
-         <property name="bottomMargin">
+         <property name="margin">
           <number>8</number>
          </property>
          <item row="0" column="0">
@@ -161,16 +134,7 @@
          <property name="spacing">
           <number>8</number>
          </property>
-         <property name="leftMargin">
-          <number>8</number>
-         </property>
-         <property name="topMargin">
-          <number>8</number>
-         </property>
-         <property name="rightMargin">
-          <number>8</number>
-         </property>
-         <property name="bottomMargin">
+         <property name="margin">
           <number>8</number>
          </property>
          <item>
@@ -1461,7 +1425,6 @@
         </widget>
        </item>
       </layout>
-      <zorder>wallFuncFrame</zorder>
       <zorder></zorder>
       <zorder></zorder>
       <zorder></zorder>
@@ -1477,7 +1440,11 @@
           <widget class="QComboBox" name="shapeComboBox"/>
          </item>
          <item row="1" column="0" rowspan="3" colspan="4">
-          <widget class="QListWidget" name="faceListWidget"/>
+          <widget class="QListWidget" name="faceListWidget">
+           <property name="selectionMode">
+            <enum>QAbstractItemView::ExtendedSelection</enum>
+           </property>
+          </widget>
          </item>
          <item row="0" column="0" colspan="2">
           <widget class="QLabel" name="label_6">
