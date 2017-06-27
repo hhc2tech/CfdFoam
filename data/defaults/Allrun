@@ -47,11 +47,11 @@ runCommand createPatch -overwrite
 %{%(porousZones/%(0%)/PartNameList%)
 runCommand surfaceTransformPoints -scale "(0.001 0.001 0.001)" "constant/triSurface/%(0%).stl" "constant/triSurface/%(0%)Scaled.stl"
 
+%}
+%}
 # Set cell zones contained inside the .stl surfaces
 runCommand topoSet
 
-%}
-%}
 %}
 
 %{%(bafflesPresent%)
