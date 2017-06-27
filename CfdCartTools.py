@@ -344,16 +344,26 @@ class CfdCartTools():
 
             elif cartMethod == 'snappyHexMesh':
                 f.write('runCommand blockMesh \n')
+                analysis_object = CfdTools.getParentAnalysisObject(self.mesh_obj)
+                solver_object = CfdTools.getSolver(analysis_object)
+                print solver_object.Parallel
+                #print solver_object.
+                #print solver_object.
                 f.write('runCommand surfaceFeatureExtract \n')
-                f.write('runCommand snappyHexMesh -overwrite\n')
-                f.write('runCommand surfaceToPatch constant/triSurface/' + self.part_obj.Name + '_Geometry.stl \n')
+                if solver_object.Parallel:
+                    f.write('runCommand decomposePar\n')
+                    f.write('runCommand mpirun -n '+str(solver_object.ParallelCores)+' snappyHexMesh -parallel -overwrite\n')
+                    #f.write('runCommand  snappyHexMesh '+str(solver_object.ParallelCores)+' -overwrite\n')
+                    f.write('runCommand reconstructParMesh -constant\n')
+                else:
+                    f.write('runCommand snappyHexMesh -overwrite\n')
 
+                f.write('runCommand surfaceToPatch constant/triSurface/' + self.part_obj.Name + '_Geometry.stl \n')
             # Create stl of FOAM mesh outside (in mm) to view the object in FreeCAD.
             f.write('runCommand surfaceMeshTriangulate mesh_outside.stl\n')
             f.write('runCommand surfaceTransformPoints -scale "(1000 1000 1000)"'
                     + ' mesh_outside.stl mesh_outside.stl\n')
             f.write('\n')
-
         import stat
         s = os.stat(fname)
         os.chmod(fname, s.st_mode | stat.S_IEXEC)  # Update Allmesh permission - will fail silently on windows
@@ -572,6 +582,22 @@ class CfdCartTools():
                                                             "FILENAME": "surfaceFeatureExtractDict"}),
                                    "SURFACEFEATURE": FeatureExtract}))
             fid.close()
+
+            analysis_object = CfdTools.getParentAnalysisObject(self.mesh_obj)
+            solver_object = CfdTools.getSolver(analysis_object)
+            if solver_object.Parallel:
+                #fname = self.temp_file_surfaceFeatureExtractDict
+                fname = os.path.join(self.systemDir, 'decomposeParDict')
+                fid = open(fname,'w')
+                fid.write(CfdTools.readTemplate(os.path.join(self.templatePath,  "_helperFiles","snappy", \
+                    "decomposeParDict"),
+                                   {"HEADER": CfdTools.readTemplate(os.path.join(self.templatePath, "_helperFiles", \
+                                   "header"),
+                                                               {"LOCATION": "system",
+                                                                "FILENAME": "decomposeParDict"}),
+                                   "nProc": solver_object.ParallelCores}))
+                fid.close()
+
 
     def read_and_set_new_mesh(self):
         if not self.error:
