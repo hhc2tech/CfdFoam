@@ -37,6 +37,8 @@ class _CommandCfdPhysicsSelection(FemCommands):
 
         # Allow to re-create if deleted
         if not(isPresent):
+            FreeCADGui.addModule("FemGui")
+            FreeCADGui.doCommand("analysis = FemGui.getActiveAnalysis()")
             FreeCADGui.addModule("CfdPhysicsSelection")
             FreeCADGui.doCommand(
                 "analysis.Member = analysis.Member + [CfdPhysicsSelection.makeCfdPhysicsSelection()]")

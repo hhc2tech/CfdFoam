@@ -63,8 +63,9 @@ class _CommandCfdInitialiseInternalFlowField(FemCommands):
 
         # Allow to re-create if deleted
         if not isPresent:
-            FreeCADGui.addModule("CfdInitialiseFlowField")
             FreeCADGui.addModule("FemGui")
+            FreeCADGui.doCommand("analysis = FemGui.getActiveAnalysis()")
+            FreeCADGui.addModule("CfdInitialiseFlowField")
             FreeCADGui.doCommand(
                 "analysis.Member = analysis.Member + [CfdInitialiseFlowField.makeCfdInitialFlowField()]")
             FreeCADGui.ActiveDocument.setEdit(FreeCAD.ActiveDocument.ActiveObject.Name)

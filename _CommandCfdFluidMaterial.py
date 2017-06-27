@@ -59,7 +59,9 @@ class setCfdFluidPropertyCommand(FemCommands):
 
         # Allow to re-create if deleted
         if not isPresent:
+            FreeCADGui.addModule("FemGui")
             FreeCADGui.addModule("CfdFluidMaterial")
+            FreeCADGui.doCommand("analysis = FemGui.getActiveAnalysis()")
             FreeCADGui.doCommand(
                 "analysis.Member = analysis.Member + [CfdFluidMaterial.makeCfdFluidMaterial('FluidProperties')]")
             FreeCADGui.ActiveDocument.setEdit(FreeCAD.ActiveDocument.ActiveObject.Name)
