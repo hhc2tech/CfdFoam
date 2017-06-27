@@ -67,6 +67,7 @@ class TaskPanelCfdFluidProperties:
         # QtCore.QObject.connect, does not recognize textChanged signal.  We do so to allow the units to be pulled
         # along with the values to ensure unit consistency, unlike FEM where units are assumed upon change/save.
 
+        #NOTE: this will cause a number of errors while the units are in the process of being entered
         self.form.fDens.textChanged.connect(self.DensityChanged)
         self.form.fViscosity.textChanged.connect(self.ViscosityChanged)
 
@@ -90,8 +91,8 @@ class TaskPanelCfdFluidProperties:
             new_unit = "kg/s/m"
             visc = FreeCAD.Units.Quantity(matmap['DynamicViscosity'])
             visc_with_new_unit = float(visc.getValueAs(new_unit))
-            print(self.form.fViscosity.setProperty("quantity", self.form.fViscosity.property("quantity")))
-            #self.form.fViscosity.setText("{} {}".format(visc_with_new_unit,new_unit))
+            #print(self.form.fViscosity.setProperty("quantity", self.form.fViscosity.property("quantity")))
+            self.form.fViscosity.setText("{} {}".format(visc_with_new_unit,new_unit))
 
     def DensityChanged(self,value):
         import Units
